@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <!-- Import prebid, including the brandmetrics rtd- module -->
+        <script type="text/javascript" src="prebid-withBrandmetricsRTD.js" async></script>
+        <script>
+            // Mock usp- api
+            window.__uspapi = function (command, version, callback) {
+                if (command === 'getUSPData') {
+                    callback({
+                        version: 1,
+                        uspString: '1YNN'
+                    }, true);
+                }
+            };
+
+            /***
+             * Mock a bid response where 'bidder' and 'dealId' matches a brandmetrics brandlift measurement.
+             * The 'adUnitCode' is used to find the element to track the time of which the ad is inview.
+             * 
+             * 'auctionId' and 'transactionId' are appended to the billable event
+             * 
+             * This information is usually gathered automatically from pbjs.getAllWinningBids() and/or the event 'adRenderSucceeded', 
+             * but is mocked for testing purposes.
+             * 
+             ***/
+            window._brandmetrics = window._brandmetrics || [];
+            window._brandmetrics.push({
+                cmd: "_triggerlistener",
+                val: {
+                    type: "pbj",
+                    data: {
+                        adUnitCode: "test-div",
+                        auctionId: "6a828885-53dd-41d8-ad20-cf88f8a8bcc7",
+                        transactionId: "c6a3a1f2-298b-4bdf-9925-a622fd4073d6",
+                        bidder: "mockBidder",
+                        dealId: 123456789,
+                    }
+                }
+            });
+        
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+            pbjs.que.push(function () {
+                pbjs.setConfig({
+                    consentManagement: {
+                        usp: {
+                            cmpApi: 'iab',
+                        }
+                    },
+                    realTimeData: {
+                        auctionDelay: 50,
+                        dataProviders: [
+                            {
+                                name: "brandmetrics",
+                                waitForIt: true,
+                                params: {
+                                    scriptId: '8951af14ca8840919def766e3b13e86f',
+                                    bidders: []
+                                }
+                            }
+                        ]
+                    }
+                });
+                pbjs.addAdUnits(adUnits);
+            });
+        </script>
+    </head>
+    <body>
+        <h2>Brandmetrics test- page</h2>
+        <div id='test-div'>Adslot</div>
+    </body>
+</html>
